@@ -293,14 +293,16 @@ class TranslationWorker(QThread):
         return self.perform_ocr(pil_img)
 
     def preprocess_image_for_ocr(self, pil_img):
-        """Preprocesses cropped subtitle image by upscaling 2x and enhancing contrast for maximum OCR precision."""
+        """Preprocesses cropped subtitle image by upscaling 2x, sharpening, and enhancing contrast for maximum OCR precision."""
         try:
             w, h = pil_img.size
             if w < 20 or h < 10:
                 return pil_img
             scaled = pil_img.resize((w * 2, h * 2), Image.Resampling.LANCZOS)
             enhancer = ImageEnhance.Contrast(scaled)
-            return enhancer.enhance(1.4)
+            contrast_img = enhancer.enhance(1.6)
+            sharpener = ImageEnhance.Sharpness(contrast_img)
+            return sharpener.enhance(1.8)
         except Exception:
             return pil_img
 
@@ -365,11 +367,17 @@ class TranslationWorker(QThread):
         if alpha_count < 3 and len(text) > 4:
             return ""
 
-        text = text.replace("€", "").replace("•", "").replace("chxe", "the")
-        text = text.replace("•\\dea", "idea").replace("•dea", "idea").replace("Gooå", "Good")
-        text = text.replace("shou\\d", "should").replace("iotches", "notches")
+        # Remove OCR noise symbols embedded inside words (e.g. M@t$ugane -> Matsugane, thief] -> thief)
+        noise_chars = ["%", "@", "$", "]", "[", "|", "~", "€", "•", "§", "¥"]
+        for ch in noise_chars:
+            text = text.replace(ch, "")
+
+        # Common OCR fixes for game fonts
+        text = text.replace("chxe", "the").replace("•\\dea", "idea").replace("•dea", "idea")
+        text = text.replace("Gooå", "Good").replace("shou\\d", "should").replace("iotches", "notches")
+        text = text.replace("thiéfl", "thief").replace("thiéf", "thief")
             
-        return text.strip()
+        return " ".join(text.split())
 
     def translate_text(self, text, source_lang):
         """Hybrid Translation Pipeline:
