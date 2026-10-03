@@ -78,12 +78,12 @@ class TranslationWorker(QThread):
                     continue
 
                 if cap_mode == "auto_bottom":
-                    # Auto Subtitle Zone (Bottom 30% Center of screen where 99% game subtitles sit)
+                    # Auto Subtitle Zone (Bottom 25% Center of screen where 99% game subtitles sit)
                     sw, sh = screen.geometry().width(), screen.geometry().height()
-                    x = int(sw * 0.15)
-                    y = int(sh * 0.68)
-                    w = int(sw * 0.70)
-                    h = int(sh * 0.28)
+                    x = int(sw * 0.12)
+                    y = int(sh * 0.72)
+                    w = int(sw * 0.76)
+                    h = int(sh * 0.24)
                     pixmap = screen.grabWindow(0, x, y, w, h)
                 elif cap_mode == "auto_full":
                     pixmap = screen.grabWindow(0)
@@ -245,6 +245,12 @@ class TranslationWorker(QThread):
         text = " ".join(text.split())
         if len(text) < 2:
             return ""
+        
+        # Filter out garbage noise lines consisting of non-word special characters (e.g. "•-*5SX-e•")
+        alpha_count = sum(1 for c in text if c.isalpha() or ord(c) > 0x2E80)
+        if alpha_count < 3 and len(text) > 4:
+            return ""
+            
         return text
 
     def translate_text(self, text, source_lang):
