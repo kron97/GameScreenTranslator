@@ -84,27 +84,7 @@ class AutoZoneBoxWidget(QWidget):
         header_layout.addWidget(self.hide_btn)
 
         self.main_layout.addWidget(self.header_bar)
-
-        # Center placeholder hint
-        self.center_box = QWidget(self)
-        self.center_box.setMouseTracking(True)
-        center_layout = QVBoxLayout(self.center_box)
-        center_layout.setContentsMargins(10, 10, 10, 10)
-
-        self.hint_lbl = QLabel("🎯 AREA PINDAIAN SUBTITLE GAME\n(Geser header untuk memindahkan, tarik garis tepi/sudut untuk mengubah ukuran)")
-        self.hint_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.hint_lbl.setStyleSheet("""
-            QLabel {
-                color: rgba(0, 230, 118, 200);
-                font-size: 12px;
-                font-weight: bold;
-                background-color: rgba(0, 0, 0, 40);
-                border-radius: 4px;
-                padding: 6px;
-            }
-        """)
-        center_layout.addWidget(self.hint_lbl)
-        self.main_layout.addWidget(self.center_box)
+        self.main_layout.addStretch()
 
         # Restore saved position or default
         self.restore_geometry()
@@ -148,13 +128,12 @@ class AutoZoneBoxWidget(QWidget):
         if self.is_locked:
             self.lock_btn.setText("🔓 Buka Kunci")
             self.title_lbl.setText("🤖 Area Subtitle (Terkunci)")
-            self.hint_lbl.setText("🔒 Area Subtitle Terkunci")
-            self.hint_lbl.setStyleSheet("color: rgba(255, 255, 255, 120); background-color: transparent;")
+            if self.cfg.get("hide_header_on_lock", True):
+                self.header_bar.hide()
         else:
             self.lock_btn.setText("🔒 Kunci")
             self.title_lbl.setText("🤖 Area Subtitle Otomatis (Auto Zone)")
-            self.hint_lbl.setText("🎯 AREA PINDAIAN SUBTITLE GAME\n(Geser header untuk memindahkan, tarik garis tepi/sudut untuk mengubah ukuran)")
-            self.hint_lbl.setStyleSheet("color: rgba(0, 230, 118, 200); font-size: 12px; font-weight: bold; background-color: rgba(0, 0, 0, 40); border-radius: 4px; padding: 6px;")
+            self.header_bar.show()
         
         self.update()
 
@@ -162,14 +141,13 @@ class AutoZoneBoxWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # Semi-transparent background fill inside box
-        bg_alpha = 10 if self.is_locked else 30
-        painter.fillRect(self.rect(), QColor(0, 230, 118, bg_alpha))
+        # 100% Transparent inside box (0% opacity fill) so game subtitles are 100% clear and un-obscured!
+        painter.fillRect(self.rect(), QColor(0, 0, 0, 0))
 
         # Neon Cyan/Green Dashed Border
-        pen_color = QColor(0, 230, 118, 120 if self.is_locked else 230)
+        pen_color = QColor(0, 230, 118, 60 if self.is_locked else 230)
         pen_style = Qt.PenStyle.DashLine if not self.is_locked else Qt.PenStyle.DotLine
-        pen = QPen(pen_color, 2, pen_style)
+        pen = QPen(pen_color, 2 if not self.is_locked else 1, pen_style)
         painter.setPen(pen)
         painter.drawRect(self.rect().adjusted(1, 1, -1, -1))
 

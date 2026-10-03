@@ -142,9 +142,9 @@ class TranslationWorker(QThread):
                     auto_region = self.cfg.get("auto_bottom_region", None)
                     if auto_region and isinstance(auto_region, dict) and auto_region.get("width", 0) > 20 and auto_region.get("height", 0) > 20:
                         x = auto_region["x"]
-                        y = auto_region["y"]
+                        y = auto_region["y"] + 28  # Exclude top dark header bar of AutoZoneBoxWidget
                         w = auto_region["width"]
-                        h = auto_region["height"]
+                        h = max(10, auto_region["height"] - 28)
                     else:
                         game_rect = get_active_game_window_rect()
                         if game_rect:
