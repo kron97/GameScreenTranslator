@@ -426,8 +426,13 @@ class GameTranslatorApp(QMainWindow):
             except Exception:
                 pass
 
+            # Connect finished signal to deleteLater so thread deletes ONLY after run() exits
+            try:
+                w.finished.connect(w.deleteLater)
+            except Exception:
+                pass
+
             w.stop()
-            w.deleteLater()
 
         self.btn_toggle.setText("▶ MULAI MENTERJEMAHKAN")
         self.btn_toggle.setObjectName("btn_start")
@@ -521,8 +526,7 @@ class GameTranslatorApp(QMainWindow):
         save_config(self.cfg)
 
     def closeEvent(self, event):
-        if self.worker:
-            self.worker.stop()
+        self.stop_translation()
         self.subtitle_overlay.close()
         save_config(self.cfg)
         event.accept()
