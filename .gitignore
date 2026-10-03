@@ -1,0 +1,20 @@
+# Embedded Zip and Virtual Environments
+python_env/
+python_embed.zip
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# User Local Configuration & Scratch
+config.json
+settings.json
+test_*.py
+get-pip.py
+
+# IDE / OS junk
+.vscode/
+.idea/
+*.swp
+*.tmp
