@@ -2,7 +2,7 @@ import time
 import asyncio
 import requests
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageEnhance
 from PyQt6.QtCore import QThread, pyqtSignal, QRect, QObject
 from PyQt6.QtGui import QGuiApplication
 
@@ -204,9 +204,25 @@ class TranslationWorker(QThread):
 
         return self.perform_ocr(pil_img)
 
+    def preprocess_image_for_ocr(self, pil_img):
+        """Preprocesses cropped subtitle image by upscaling 2x and enhancing contrast for maximum OCR precision."""
+        try:
+            w, h = pil_img.size
+            if w < 20 or h < 10:
+                return pil_img
+            # Upscale 2x for sharp letter edge recognition
+            scaled = pil_img.resize((w * 2, h * 2), Image.Resampling.LANCZOS)
+            enhancer = ImageEnhance.Contrast(scaled)
+            return enhancer.enhance(1.4)
+        except Exception:
+            return pil_img
+
     def perform_ocr(self, pil_img):
         engine = self.cfg.get("ocr_engine", "winocr")
         src_lang = self.cfg.get("source_lang", "auto")
+
+        # Apply 2x upscale + contrast enhancement for stylized game fonts
+        proc_img = self.preprocess_image_for_ocr(pil_img)
 
         lang_map_win = {
             "en": "en",
@@ -220,7 +236,7 @@ class TranslationWorker(QThread):
             try:
                 win_lang = lang_map_win.get(src_lang, "en")
                 async def run_winocr():
-                    res = await winocr.recognize_pil(pil_img, lang=win_lang)
+                    res = await winocr.recognize_pil(proc_img, lang=win_lang)
                     return res.text if res else ""
                 return asyncio.run(run_winocr())
             except Exception as e:
@@ -229,7 +245,7 @@ class TranslationWorker(QThread):
 
         if engine == "rapidocr" and self.rapid_engine:
             try:
-                img_np = np.array(pil_img)
+                img_np = np.array(proc_img)
                 res, _ = self.rapid_engine(img_np)
                 if res:
                     lines = [line[1] for line in res]
@@ -246,10 +262,24 @@ class TranslationWorker(QThread):
         if len(text) < 2:
             return ""
         
+        # Self-UI Exclusion Filter: Never translate GameTranslator ID's own window UI text
+        app_ui_keywords = [
+            "BAHASA ASAL", "MESIN OCR", "MESIN PENERJEMAH", "GOOGLE GTX", "DEEPL",
+            "PASTE DEEPL", "SEMBUNYIKAN BILAH JUDUL", "PILIH AREA SUBTITLE", "TENTANG APLIKASI",
+            "MODUS TANGKAPAN", "KONTROL UTAMA"
+        ]
+        text_upper = text.upper()
+        if any(kw in text_upper for kw in app_ui_keywords):
+            return ""
+
         # Filter out garbage noise lines consisting of non-word special characters (e.g. "•-*5SX-e•")
         alpha_count = sum(1 for c in text if c.isalpha() or ord(c) > 0x2E80)
         if alpha_count < 3 and len(text) > 4:
             return ""
+
+        # Common OCR fixes for serif game fonts
+        text = text.replace("•\\dea", "idea").replace("•dea", "idea").replace("Gooå", "Good")
+        text = text.replace("shou\\d", "should").replace("iotches", "notches")
             
         return text
 
