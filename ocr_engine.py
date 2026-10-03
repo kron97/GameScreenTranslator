@@ -10,6 +10,35 @@ import winocr
 from rapidocr_onnxruntime import RapidOCR
 from translation_cache import TranslationCache
 
+def get_active_game_window_rect():
+    """Detects physical bounding rect (x, y, w, h) of active game window if focused."""
+    try:
+        user32 = ctypes.windll.user32
+        hwnd = user32.GetForegroundWindow()
+        if not hwnd or hwnd == 0:
+            return None
+
+        length = user32.GetWindowTextLengthW(hwnd)
+        if length > 0:
+            buf = ctypes.create_unicode_buffer(length + 1)
+            user32.GetWindowTextW(hwnd, buf, length + 1)
+            title = buf.value
+            ignore = ["GAMETRANSLATOR", "SUBTITLE", "EXPLORER", "PROGRAM MANAGER", "TASKBAR", "SETTINGS", "CMD.EXE"]
+            if any(ig in title.upper() for ig in ignore):
+                return None
+
+        rect = ctypes.wintypes.RECT()
+        if user32.GetWindowRect(hwnd, ctypes.byref(rect)):
+            gx, gy = max(0, rect.left), max(0, rect.top)
+            gw = rect.right - rect.left
+            gh = rect.bottom - rect.top
+            if gw > 300 and gh > 200:
+                return (gx, gy, gw, gh)
+    except Exception:
+        pass
+    return None
+
+
 def compute_image_dhash(pil_img):
     """Computes a 64-bit difference hash (dhash) for 0ms visual frame diffing."""
     try:
@@ -79,16 +108,26 @@ class TranslationWorker(QThread):
                     continue
 
                 if cap_mode == "auto_bottom":
-                    # Grab full physical screen pixmap to prevent Windows High-DPI scaling offset
                     full_pix = screen.grabWindow(0)
                     if not full_pix or full_pix.isNull():
                         time.sleep(0.1)
                         continue
                     pw, ph = full_pix.width(), full_pix.height()
-                    x = int(pw * 0.08)
-                    y = int(ph * 0.68)
-                    w = int(pw * 0.84)
-                    h = int(ph * 0.29)
+
+                    # Game Window Lock: Check if active game window is detected
+                    game_rect = get_active_game_window_rect()
+                    if game_rect:
+                        gx, gy, gw, gh = game_rect
+                        x = max(0, gx + int(gw * 0.08))
+                        y = max(0, gy + int(gh * 0.68))
+                        w = min(pw - x, int(gw * 0.84))
+                        h = min(ph - y, int(gh * 0.29))
+                    else:
+                        x = int(pw * 0.08)
+                        y = int(ph * 0.68)
+                        w = int(pw * 0.84)
+                        h = int(ph * 0.29)
+
                     pixmap = full_pix.copy(x, y, w, h)
                 elif cap_mode == "auto_full":
                     pixmap = screen.grabWindow(0)
