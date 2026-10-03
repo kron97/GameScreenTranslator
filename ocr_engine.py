@@ -277,11 +277,14 @@ class TranslationWorker(QThread):
         if alpha_count < 3 and len(text) > 4:
             return ""
 
+        # Remove weird non-ASCII symbols like € or \ inside words
+        text = text.replace("€", "").replace("•", "").replace("chxe", "the")
+
         # Common OCR fixes for serif game fonts
         text = text.replace("•\\dea", "idea").replace("•dea", "idea").replace("Gooå", "Good")
         text = text.replace("shou\\d", "should").replace("iotches", "notches")
             
-        return text
+        return text.strip()
 
     def translate_text(self, text, source_lang):
         """Hybrid Translation Pipeline:
@@ -331,14 +334,13 @@ class TranslationWorker(QThread):
         }
         
         target_lang = "ID"
-        sl = source_lang.upper() if source_lang != "auto" else None
+        sl = source_lang.upper() if (source_lang and source_lang != "auto") else "EN"
         
         payload = {
             "text": [text],
-            "target_lang": target_lang
+            "target_lang": target_lang,
+            "source_lang": sl
         }
-        if sl:
-            payload["source_lang"] = sl
 
         try:
             resp = self.session.post(url, json=payload, headers=headers, timeout=2.5)
@@ -355,7 +357,8 @@ class TranslationWorker(QThread):
     def translate_google(self, text, source_lang):
         """Translates text to Indonesian using GTX Google endpoint with persistent HTTP session"""
         try:
-            sl = source_lang if source_lang != "auto" else "auto"
+            # Explicitly force English if auto to avoid Google GTX switching to French/Spanish on short words
+            sl = source_lang if (source_lang and source_lang != "auto") else "en"
             params = {
                 "client": "gtx",
                 "sl": sl,
