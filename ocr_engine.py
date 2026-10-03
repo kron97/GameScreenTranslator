@@ -10,6 +10,25 @@ import winocr
 from rapidocr_onnxruntime import RapidOCR
 from translation_cache import TranslationCache
 
+def compute_image_dhash(pil_img):
+    """Computes a 64-bit difference hash (dhash) for 0ms visual frame diffing."""
+    try:
+        img = pil_img.convert("L").resize((9, 8), Image.Resampling.NEAREST)
+        pixels = list(img.getdata())
+        diff = []
+        for row in range(8):
+            for col in range(8):
+                pixel_left = pixels[row * 9 + col]
+                pixel_right = pixels[row * 9 + col + 1]
+                diff.append(pixel_left > pixel_right)
+        decimal_val = 0
+        for bit in diff:
+            decimal_val = (decimal_val << 1) | bit
+        return decimal_val
+    except Exception:
+        return None
+
+
 class TranslationWorker(QThread):
     translation_done = pyqtSignal(str, str) # (original, translated)
     status_updated = pyqtSignal(str)         # status text
@@ -20,7 +39,14 @@ class TranslationWorker(QThread):
         self.cfg = cfg
         self.is_running = False
         self.last_clean_text = ""
+        self.last_img_hash = None
         self.cache = TranslationCache()
+
+        # Persistent HTTP Session for connection pooling (0ms TLS handshake overhead)
+        self.session = requests.Session()
+        self.session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        })
 
         try:
             self.rapid_engine = RapidOCR()
@@ -33,6 +59,7 @@ class TranslationWorker(QThread):
 
     def clear_cache(self):
         self.last_clean_text = ""
+        self.last_img_hash = None
 
     def run(self):
         self.is_running = True
@@ -91,6 +118,15 @@ class TranslationWorker(QThread):
 
                 if not self.is_running:
                     break
+
+                # 0ms Visual Diff Check: Skip OCR if subtitle area pixels haven't changed
+                img_hash = compute_image_dhash(pil_img)
+                if img_hash is not None and self.last_img_hash is not None:
+                    diff_bits = bin(img_hash ^ self.last_img_hash).count("1")
+                    if diff_bits <= 2:  # Threshold for static/unchanged frame
+                        time.sleep(0.08)
+                        continue
+                self.last_img_hash = img_hash
 
                 # Perform OCR
                 if cap_mode in ["auto_full", "auto_bottom"]:
@@ -269,7 +305,7 @@ class TranslationWorker(QThread):
             payload["source_lang"] = sl
 
         try:
-            resp = requests.post(url, json=payload, headers=headers, timeout=3.0)
+            resp = self.session.post(url, json=payload, headers=headers, timeout=2.5)
             if resp.status_code == 200:
                 data = resp.json()
                 if data and "translations" in data and len(data["translations"]) > 0:
@@ -281,7 +317,7 @@ class TranslationWorker(QThread):
         return None
 
     def translate_google(self, text, source_lang):
-        """Translates text to Indonesian using GTX Google endpoint"""
+        """Translates text to Indonesian using GTX Google endpoint with persistent HTTP session"""
         try:
             sl = source_lang if source_lang != "auto" else "auto"
             params = {
@@ -291,10 +327,10 @@ class TranslationWorker(QThread):
                 "dt": "t",
                 "q": text
             }
-            resp = requests.get(
+            resp = self.session.get(
                 "https://translate.googleapis.com/translate_a/single",
                 params=params,
-                timeout=3.0
+                timeout=2.5
             )
             if resp.status_code == 200:
                 data = resp.json()

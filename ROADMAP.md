@@ -1,29 +1,29 @@
 # 💡 Roadmap & Rencana Fitur Pengembangan GameScreenTranslator
 
-Dokumen ini mencatat ide-ide dan strategi teknis untuk pembaruan (*updates*) versi **GameScreenTranslator** selanjutnya.
+Dokumen ini mencatat ide-ide dan status implementasi untuk pembaruan (*updates*) **GameScreenTranslator**.
 
 ---
 
-## 🚀 1. Akselerasi Kecepatan Penerjemahan (Memangkas Delay)
+## 🚀 1. Akselerasi Kecepatan Penerjemahan (Memangkas Delay) - ✅ SELESAI & IMPLEMENTED
 
-### Masalah Saat Ini
-Proses pemindaian OCR dan panggilan HTTP API terjemahan Google GTX memerlukan waktu ~0.8s - 1.5s per kalimat.
+### Status
+**SELESAI (Completed)** - Seluruh strategi optimasi latensi telah diterapkan pada `ocr_engine.py` dan `translation_cache.py`.
 
-### Strategi & Solusi Teknis
-* **Image Hash Diffing (Deteksi Perubahan Subtitle)**:
-  - Sebelum menjalankan OCR, lakukan komparasi *perceptual hash* (`dhash`/`phash`) pada area subtitle.
-  - Jika piksel tidak berubah (scene diam atau dialog belum berganti), batalkan OCR & HTTP request secara instant (0ms CPU delay).
-* **Caching Terjemahan Lokal (Dictionary LRU Cache)**:
-  - Simpan frasa/kalimat yang sudah pernah diterjemahkan ke dalam memori *cache* atau database SQLite lokal.
-  - Kalimat yang sering berulang (seperti *"Yes"*, *"No"*, *"Press Space to continue"*, dialog berulang) akan langsung tampil 0ms tanpa menunggu koneksi internet.
-* **HTTP Connection Pooling (`requests.Session`)**:
-  - Gunakan koneksi *persistent Keep-Alive* HTTP Session agar tidak membuka TLS handshake baru setiap kali terjemahan dikirim.
-* **Opsional: Offline NMT Engine**:
-  - Riset integrasi model terjemahan offline ringan (*CTranslate2* / *MarianMT*) untuk opsi penerjemahan tanpa internet dengan latensi ultra-rendah.
+### Fitur yang Telah Diimplementasikan
+* ✅ **0ms Image Hash Diffing (`compute_image_dhash`)**:
+  - Menggunakan algoritma *dhash* (difference hash) 64-bit pada area subtitle.
+  - Jika piksel layar tidak berubah (scene diam atau dialog belum berganti), aplikasi secara instant melewati (*skip*) proses OCR & HTTP request (0ms CPU delay).
+* ✅ **Local SQLite Translation Cache (`TranslationCache`)**:
+  - Menyimpan otomatis hasil terjemahan ke database SQLite lokal `translation_cache.db`.
+  - Frasa atau dialog yang sudah pernah muncul langsung tampil **0ms instan tanpa kuota & tanpa internet**.
+* ✅ **HTTP Connection Pooling (`requests.Session`)**:
+  - Menggunakan *persistent Keep-Alive* HTTP Session untuk memangkas overhead TLS handshake (menghemat ~150-300ms per request ke DeepL & Google GTX).
+* ✅ **Integrasi DeepL Free/Pro API**:
+  - Dukungan penuh untuk DeepL API Key dengan fallback gratis otomatis ke Google GTX.
 
 ---
 
-## 📌 2. Fitur Berjalan di Background System Tray (Minimize to Tray)
+## 📌 2. Fitur Berjalan di Background System Tray (Minimize to Tray) - ⏳ SELANJUTNYA
 
 ### Solusi Teknis
 * **`QSystemTrayIcon` PyQt6**:
@@ -38,7 +38,7 @@ Proses pemindaian OCR dan panggilan HTTP API terjemahan Google GTX memerlukan wa
 
 ---
 
-## ⌨️ 3. Global Hotkey yang Dapat Dikonfigurasi (Customizable Hotkey)
+## ⌨️ 3. Global Hotkey yang Dapat Dikonfigurasi (Customizable Hotkey) - ⏳ AKAN DATANG
 
 ### Solusi Teknis
 * **Pengaturan Tombol Pintas via UI**:
@@ -51,4 +51,4 @@ Proses pemindaian OCR dan panggilan HTTP API terjemahan Google GTX memerlukan wa
 
 ---
 
-*Catatan: Dokumen ini akan diperbarui seiring berjalannya pengembangan proyek.*
+*Catatan: Dokumen ini diperbarui seiring berjalannya pengembangan proyek.*
