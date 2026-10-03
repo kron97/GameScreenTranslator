@@ -14,7 +14,7 @@ Aplikasi **GameTranslator ID** dibuat khusus untuk memungkinkan Anda bermain vid
    - 🌐 **Google GTX Fallback**: Penggunaan gratis tanpa kuota jika tanpa API Key.
 3. **3 Modus Deteksi Tangkapan Layar (Capture Mode)**:
    - 🎯 **Area Spesifik**: Pilih area kotak subtitle secara manual dengan alat *snip* visual.
-   - 🤖 **Auto Subtitle Zone**: Otomatis memindai area 30% bawah tengah layar tempat subtitle game umumnya berada.
+   - 🤖 **Auto Subtitle Zone**: Otomatis memindai area bawah tengah layar tempat subtitle game berada. Dilengkapi **bingkai visual interaktif yang dapat digeser, di-resize, dikunci, atau disembunyikan** dengan mudah.
    - 🌐 **Deteksi Otomatis Seluruh Layar**: Otomatis memindai teks dialog di seluruh layar game dengan penyaringan pintar.
 4. **Overlay Subtitle 100% Transparan & Bening**:
    - Opsi tampilan **Bening / Tanpa Latar Belakang** (hanya teks terjemahan melayang di atas game).

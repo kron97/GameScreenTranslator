@@ -115,19 +115,26 @@ class TranslationWorker(QThread):
                         continue
                     pw, ph = full_pix.width(), full_pix.height()
 
-                    # Game Window Lock: Check if active game window is detected
-                    game_rect = get_active_game_window_rect()
-                    if game_rect:
-                        gx, gy, gw, gh = game_rect
-                        x = max(0, gx + int(gw * 0.08))
-                        y = max(0, gy + int(gh * 0.68))
-                        w = min(pw - x, int(gw * 0.84))
-                        h = min(ph - y, int(gh * 0.29))
+                    auto_region = self.cfg.get("auto_bottom_region", None)
+                    if auto_region and isinstance(auto_region, dict) and auto_region.get("width", 0) > 20 and auto_region.get("height", 0) > 20:
+                        x = auto_region["x"]
+                        y = auto_region["y"]
+                        w = auto_region["width"]
+                        h = auto_region["height"]
                     else:
-                        x = int(pw * 0.08)
-                        y = int(ph * 0.68)
-                        w = int(pw * 0.84)
-                        h = int(ph * 0.29)
+                        # Game Window Lock: Check if active game window is detected
+                        game_rect = get_active_game_window_rect()
+                        if game_rect:
+                            gx, gy, gw, gh = game_rect
+                            x = max(0, gx + int(gw * 0.08))
+                            y = max(0, gy + int(gh * 0.68))
+                            w = min(pw - x, int(gw * 0.84))
+                            h = min(ph - y, int(gh * 0.29))
+                        else:
+                            x = int(pw * 0.08)
+                            y = int(ph * 0.68)
+                            w = int(pw * 0.84)
+                            h = int(ph * 0.29)
 
                     pixmap = full_pix.copy(x, y, w, h)
                 elif cap_mode == "auto_full":

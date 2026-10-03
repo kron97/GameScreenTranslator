@@ -11,6 +11,7 @@ __pycache__/
 config.json
 settings.json
 test_*.py
+test_*.png
 get-pip.py
 
 # IDE / OS junk

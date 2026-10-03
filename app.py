@@ -15,6 +15,7 @@ from PyQt6.QtGui import QFont, QIcon, QColor
 from config import load_config, save_config
 from region_selector import RegionSelector
 from subtitle_overlay import SubtitleOverlay
+from auto_zone_widget import AutoZoneBoxWidget
 from ocr_engine import TranslationWorker
 
 
@@ -31,6 +32,12 @@ class GameTranslatorApp(QMainWindow):
         self.subtitle_overlay = SubtitleOverlay(self.cfg)
         self.subtitle_overlay.position_changed.connect(self.on_overlay_moved)
         self.subtitle_overlay.show()
+
+        # Initialize Interactive Auto Zone Box Widget
+        self.auto_zone_widget = AutoZoneBoxWidget(self.cfg)
+        self.auto_zone_widget.position_changed.connect(self.on_auto_zone_moved)
+        if self.cfg.get("capture_mode", "selected_region") == "auto_bottom":
+            self.auto_zone_widget.show()
 
     def init_ui(self):
         self.setWindowTitle("GameTranslator ID - Terjemahan Subtitle Game Real-Time")
@@ -196,6 +203,30 @@ class GameTranslatorApp(QMainWindow):
 
         cap_layout.addWidget(self.widget_region)
         self.widget_region.setVisible(cur_cap == "selected_region")
+
+        # Controls for auto_bottom mode
+        self.widget_auto_bottom = QWidget()
+        auto_layout = QVBoxLayout(self.widget_auto_bottom)
+        auto_layout.setContentsMargins(0, 5, 0, 0)
+
+        auto_btn_layout = QHBoxLayout()
+        self.btn_toggle_zone_box = QPushButton("👁 Tampilkan / Sembunyikan Kotak Area")
+        self.btn_toggle_zone_box.clicked.connect(self.toggle_zone_box_visibility)
+        auto_btn_layout.addWidget(self.btn_toggle_zone_box)
+
+        self.btn_reset_zone_box = QPushButton("🔄 Reset ke Default Game/Layar")
+        self.btn_reset_zone_box.clicked.connect(self.reset_zone_box)
+        auto_btn_layout.addWidget(self.btn_reset_zone_box)
+
+        auto_layout.addLayout(auto_btn_layout)
+
+        auto_reg = self.cfg.get("auto_bottom_region", {"x": 0, "y": 0, "width": 0, "height": 0})
+        self.lbl_auto_region = QLabel(f"Area Otomatis: X={auto_reg.get('x', 0)}, Y={auto_reg.get('y', 0)}, Lebar={auto_reg.get('width', 0)}px, Tinggi={auto_reg.get('height', 0)}px")
+        self.lbl_auto_region.setStyleSheet("color: #00E676; font-size: 11px;")
+        auto_layout.addWidget(self.lbl_auto_region)
+
+        cap_layout.addWidget(self.widget_auto_bottom)
+        self.widget_auto_bottom.setVisible(cur_cap == "auto_bottom")
 
         layout.addWidget(cap_box)
 
@@ -379,6 +410,13 @@ class GameTranslatorApp(QMainWindow):
         chosen = mode_map[idx]
         self.cfg["capture_mode"] = chosen
         self.widget_region.setVisible(chosen == "selected_region")
+        self.widget_auto_bottom.setVisible(chosen == "auto_bottom")
+
+        if chosen == "auto_bottom":
+            self.auto_zone_widget.show()
+        else:
+            self.auto_zone_widget.hide()
+
         save_config(self.cfg)
         if self.worker:
             self.worker.update_config(self.cfg)
@@ -528,9 +566,28 @@ class GameTranslatorApp(QMainWindow):
         self.cfg["overlay_position"] = pos_dict
         save_config(self.cfg)
 
+    def toggle_zone_box_visibility(self):
+        if self.auto_zone_widget.isVisible():
+            self.auto_zone_widget.hide()
+        else:
+            self.auto_zone_widget.show()
+
+    def reset_zone_box(self):
+        self.auto_zone_widget.reset_to_default_geometry()
+        self.auto_zone_widget.show()
+
+    def on_auto_zone_moved(self, pos_dict):
+        self.cfg["auto_bottom_region"] = pos_dict
+        save_config(self.cfg)
+        self.lbl_auto_region.setText(f"Area Otomatis: X={pos_dict['x']}, Y={pos_dict['y']}, Lebar={pos_dict['width']}px, Tinggi={pos_dict['height']}px")
+        if self.worker:
+            self.worker.update_config(self.cfg)
+
     def closeEvent(self, event):
         self.stop_translation()
         self.subtitle_overlay.close()
+        if hasattr(self, 'auto_zone_widget') and self.auto_zone_widget:
+            self.auto_zone_widget.close()
         save_config(self.cfg)
         event.accept()
 

@@ -9,7 +9,7 @@ Penerjemah Subtitle Video Game ke Bahasa Indonesia secara *Real-Time* tanpa perl
   - ⚡ **0ms SQLite Local Cache**: Menyimpan terjemahan frasa/dialog yang sudah pernah muncul (0ms delay & hemat resource!).
   - 🚀 **DeepL API**: Terjemahan kualitas super natural & akurat.
   - 🌐 **Google GTX**: Fallback gratis bebas kuota.
-- **3 Modus Tangkapan Layar**: Area Spesifik (Manual Snip), Auto Subtitle Zone (Area Bawah Layar), & Deteksi Otomatis Seluruh Layar.
+- **3 Modus Tangkapan Layar**: Area Spesifik (Manual Snip), Auto Subtitle Zone (Area Bawah Layar Interaktif yang Bisa Digeser & Resize), & Deteksi Otomatis Seluruh Layar.
 - **Overlay 100% Transparan**: Teks terjemahan melayang bening tanpa background box.
 - **Tinggi Box Otomatis (Dynamic Height)**: Mengembang ke bawah secara otomatis saat teks dialog panjang (multi-baris).
 - **Pembersihan Teks Instan**: Cache dan teks overlay dibersihkan otomatis saat terjemahan di-pause.
