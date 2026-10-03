@@ -56,6 +56,7 @@ class TranslationWorker(QThread):
 
     def update_config(self, cfg):
         self.cfg = cfg
+        self.clear_cache()
 
     def clear_cache(self):
         self.last_clean_text = ""
@@ -78,13 +79,17 @@ class TranslationWorker(QThread):
                     continue
 
                 if cap_mode == "auto_bottom":
-                    # Auto Subtitle Zone (Bottom 25% Center of screen where 99% game subtitles sit)
-                    sw, sh = screen.geometry().width(), screen.geometry().height()
-                    x = int(sw * 0.12)
-                    y = int(sh * 0.72)
-                    w = int(sw * 0.76)
-                    h = int(sh * 0.24)
-                    pixmap = screen.grabWindow(0, x, y, w, h)
+                    # Grab full physical screen pixmap to prevent Windows High-DPI scaling offset
+                    full_pix = screen.grabWindow(0)
+                    if not full_pix or full_pix.isNull():
+                        time.sleep(0.1)
+                        continue
+                    pw, ph = full_pix.width(), full_pix.height()
+                    x = int(pw * 0.08)
+                    y = int(ph * 0.68)
+                    w = int(pw * 0.84)
+                    h = int(ph * 0.29)
+                    pixmap = full_pix.copy(x, y, w, h)
                 elif cap_mode == "auto_full":
                     pixmap = screen.grabWindow(0)
                 else:
