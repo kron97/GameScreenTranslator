@@ -7,10 +7,11 @@ Aplikasi **GameTranslator ID** dibuat khusus untuk memungkinkan Anda bermain vid
 ## 🚀 Fitur Utama
 
 1. **Tanpa Mod Game**: Tidak perlu membongkar file game atau khawatir risiko banned/error.
-2. **Sistem Terjemahan Hybrid (Local SQLite Cache + DeepL API)**:
+2. **Dukungan Model AI Lokal Qwen 2.5 3B (Offline LLM)**:
+   - 🧠 **Qwen 2.5 3B Local LLM via Ollama**: Menerjemahkan dialog game secara **100% offline & pintar memahami konteks/jargon game** menggunakan AI lokal di PC Anda.
    - ⚡ **0ms Local Cache**: Frasa/kalimat yang sudah pernah diterjemahkan atau sering muncul otomatis tersimpan di database SQLite lokal. Saat kalimat tersebut muncul kembali, hasil terjemahan langsung tampil **0 milidetik (tanpa delay & tanpa kuota internet)**!
    - 🚀 **DeepL API Integration**: Terjemahan kalimat baru menggunakan DeepL untuk hasil yang **sangat natural, akurat, dan halus**.
-   - 🌐 **Google GTX Fallback**: Jika tanpa DeepL API Key, aplikasi otomatis menggunakan Google GTX secara gratis tanpa kuota.
+   - 🌐 **Google GTX Fallback**: Penggunaan gratis tanpa kuota jika tanpa API Key.
 3. **3 Modus Deteksi Tangkapan Layar (Capture Mode)**:
    - 🎯 **Area Spesifik**: Pilih area kotak subtitle secara manual dengan alat *snip* visual.
    - 🤖 **Auto Subtitle Zone**: Otomatis memindai area 30% bawah tengah layar tempat subtitle game umumnya berada.
@@ -43,8 +44,7 @@ Aplikasi **GameTranslator ID** dibuat khusus untuk memungkinkan Anda bermain vid
 ### Langkah 2: Pilih Modus Deteksi Subtitle & Mesin Penerjemah
 1. Di panel kontrol utama (bagian **1. Modus Tangkapan Layar**), pilih modus deteksi (misal: *🎯 Area Spesifik* atau *🤖 Auto Subtitle Zone*).
 2. Di bagian **4. Pengaturan Bahasa & Mesin OCR**:
-   - Pilih Mesin Penerjemah: **🚀 DeepL API** atau **🌐 Google GTX**.
-   - *(Opsional)* Masukkan DeepL Free/Pro API Key Anda jika memilih DeepL.
+   - Pilih Mesin Penerjemah: **🧠 Qwen 2.5 3B (Local LLM Offline - Ollama)**, **🌐 Google GTX**, atau **🚀 DeepL API**.
 
 ### Langkah 3: Atur Tampilan Subtitle (Opsional)
 - **Model Latar**: Pilih **👻 Bening / Tanpa Latar** jika Anda ingin teks melayang tanpa kotak background.

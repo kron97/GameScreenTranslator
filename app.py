@@ -339,11 +339,14 @@ class GameTranslatorApp(QMainWindow):
         trans_layout.addWidget(QLabel("Mesin Penerjemah:"))
         self.combo_translator = QComboBox()
         self.combo_translator.addItems([
-            "🚀 DeepL API (Terjemahan Natural + DeepL Key)",
-            "🌐 Google GTX (Gratis & Bebas Kuota)"
+            "🧠 Qwen 2.5 3B (Local LLM Offline - Ollama)",
+            "🌐 Google GTX (Gratis & Bebas Kuota)",
+            "🚀 DeepL API (Terjemahan Natural + DeepL Key)"
         ])
-        if self.cfg.get("translator_engine", "deepl") == "google":
-            self.combo_translator.setCurrentIndex(1)
+        trans_map = ["qwen", "google", "deepl"]
+        cur_trans = self.cfg.get("translator_engine", "qwen")
+        if cur_trans in trans_map:
+            self.combo_translator.setCurrentIndex(trans_map.index(cur_trans))
         self.combo_translator.currentIndexChanged.connect(self.on_settings_changed)
         trans_layout.addWidget(self.combo_translator)
         set_layout.addLayout(trans_layout)
@@ -488,7 +491,7 @@ class GameTranslatorApp(QMainWindow):
         ocr_engines = ["winocr", "rapidocr"]
         self.cfg["ocr_engine"] = ocr_engines[self.combo_ocr.currentIndex()]
         
-        translator_engines = ["deepl", "google"]
+        translator_engines = ["qwen", "google", "deepl"]
         self.cfg["translator_engine"] = translator_engines[self.combo_translator.currentIndex()]
         self.cfg["deepl_api_key"] = self.txt_deepl_key.text().strip()
 

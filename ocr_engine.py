@@ -333,8 +333,9 @@ class TranslationWorker(QThread):
     def translate_text(self, text, source_lang):
         """Hybrid Translation Pipeline:
            1. Local SQLite Cache Lookup (0ms instant response & quota saving)
-           2. DeepL Free/Pro API (High quality natural translation)
-           3. Google GTX API (Free Fallback)
+           2. Qwen 2.5 3B Local LLM (Offline AI dialogue translation)
+           3. DeepL Free/Pro API (High quality natural translation)
+           4. Google GTX API (Free Fallback)
         """
         if not text:
             return ""
@@ -348,23 +349,61 @@ class TranslationWorker(QThread):
             print(f"Cache Lookup Error: {e}")
 
         # Step 2: Determine Configured Translator Engine
-        engine_choice = self.cfg.get("translator_engine", "deepl")
+        engine_choice = self.cfg.get("translator_engine", "google")
         deepl_key = self.cfg.get("deepl_api_key", "").strip()
         translated = None
 
+        # Local Qwen 2.5 3B LLM Engine
+        if engine_choice == "qwen":
+            translated = self.translate_qwen(text, source_lang)
+            if translated:
+                self.cache.store(text, translated, "qwen2.5:3b")
+                return translated
+
+        # DeepL API Engine
         if engine_choice == "deepl" and deepl_key:
             translated = self.translate_deepl(text, source_lang, deepl_key)
             if translated:
                 self.cache.store(text, translated, "deepl")
                 return translated
 
-        # Step 3: Google GTX Fallback
+        # Google GTX Fallback Engine
         translated = self.translate_google(text, source_lang)
         if translated and not translated.startswith("[Gagal"):
             self.cache.store(text, translated, "google")
             return translated
 
         return translated or f"[Gagal menterjemahkan]: {text}"
+
+    def translate_qwen(self, text, source_lang):
+        """Translates text using local Qwen 2.5 3B model running on Ollama / Local LLM server"""
+        url = self.cfg.get("qwen_url", "http://localhost:11434/api/generate").strip()
+        model_name = self.cfg.get("qwen_model", "qwen2.5:3b").strip()
+        
+        payload = {
+            "model": model_name,
+            "system": "You are a professional game subtitle translator. Translate the given text accurately into natural, fluent Indonesian for video game dialogue. Output ONLY the translated Indonesian text with no quotes, no preamble, and no extra notes.",
+            "prompt": text,
+            "stream": False,
+            "options": {
+                "num_predict": 80,
+                "temperature": 0.1
+            }
+        }
+        try:
+            resp = self.session.post(url, json=payload, timeout=8.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                res_text = data.get("response", "").strip()
+                if res_text:
+                    if res_text.startswith('"') and res_text.endswith('"'):
+                        res_text = res_text[1:-1].strip()
+                    return res_text
+            else:
+                print(f"Qwen Local LLM HTTP Error: {resp.status_code}")
+        except Exception as e:
+            print(f"Qwen Local LLM Request Exception: {e}")
+        return None
 
     def translate_deepl(self, text, source_lang, api_key):
         """Translates text using DeepL Free/Pro REST API"""
