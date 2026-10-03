@@ -1,6 +1,7 @@
 import time
 import asyncio
 import requests
+import difflib
 import numpy as np
 from PIL import Image, ImageEnhance
 from PyQt6.QtCore import QThread, pyqtSignal, QRect, QObject
@@ -167,7 +168,7 @@ class TranslationWorker(QThread):
                 img_hash = compute_image_dhash(pil_img)
                 if img_hash is not None and self.last_img_hash is not None:
                     diff_bits = bin(img_hash ^ self.last_img_hash).count("1")
-                    if diff_bits <= 2:  # Threshold for static/unchanged frame
+                    if diff_bits <= 4:  # Tolerant threshold for camera panning/background motion
                         time.sleep(0.08)
                         continue
                 self.last_img_hash = img_hash
@@ -183,8 +184,15 @@ class TranslationWorker(QThread):
 
                 clean_text = self.clean_text(ocr_text)
 
-                # Smart Cache Check
-                if clean_text and clean_text != self.last_clean_text:
+                # Smart Fuzzy Cache Check: Prevents translation flickering on 3D background movement
+                if clean_text:
+                    if self.last_clean_text:
+                        # Compare similarity ratio with active subtitle line
+                        similarity = difflib.SequenceMatcher(None, clean_text.lower(), self.last_clean_text.lower()).ratio()
+                        if similarity >= 0.85:
+                            # Subtitle text is essentially identical (>= 85% match), skip re-translation to avoid flicker
+                            continue
+
                     self.last_clean_text = clean_text
                     
                     translated = self.translate_text(clean_text, self.cfg.get("source_lang", "auto"))
