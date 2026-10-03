@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QComboBox, QSlider, QGroupBox, QTextEdit,
-    QColorDialog, QFrame, QCheckBox, QSpinBox
+    QColorDialog, QFrame, QCheckBox, QSpinBox, QLineEdit
 )
 from PyQt6.QtCore import Qt, QRect, pyqtSlot
 from PyQt6.QtGui import QFont, QIcon, QColor
@@ -335,6 +335,28 @@ class GameTranslatorApp(QMainWindow):
         ocr_layout.addWidget(self.combo_ocr)
         set_layout.addLayout(ocr_layout)
 
+        trans_layout = QHBoxLayout()
+        trans_layout.addWidget(QLabel("Mesin Penerjemah:"))
+        self.combo_translator = QComboBox()
+        self.combo_translator.addItems([
+            "🚀 DeepL API (Terjemahan Natural + DeepL Key)",
+            "🌐 Google GTX (Gratis & Bebas Kuota)"
+        ])
+        if self.cfg.get("translator_engine", "deepl") == "google":
+            self.combo_translator.setCurrentIndex(1)
+        self.combo_translator.currentIndexChanged.connect(self.on_settings_changed)
+        trans_layout.addWidget(self.combo_translator)
+        set_layout.addLayout(trans_layout)
+
+        deepl_key_layout = QHBoxLayout()
+        deepl_key_layout.addWidget(QLabel("DeepL API Key:"))
+        self.txt_deepl_key = QLineEdit()
+        self.txt_deepl_key.setPlaceholderText("Paste DeepL Free/Pro API Key (misal: 12345678-xxxx...:fx)")
+        self.txt_deepl_key.setText(self.cfg.get("deepl_api_key", ""))
+        self.txt_deepl_key.textChanged.connect(self.on_settings_changed)
+        deepl_key_layout.addWidget(self.txt_deepl_key)
+        set_layout.addLayout(deepl_key_layout)
+
         layout.addWidget(set_box)
 
         # Section 5: Live Translation Monitor Log
@@ -461,6 +483,10 @@ class GameTranslatorApp(QMainWindow):
         ocr_engines = ["winocr", "rapidocr"]
         self.cfg["ocr_engine"] = ocr_engines[self.combo_ocr.currentIndex()]
         
+        translator_engines = ["deepl", "google"]
+        self.cfg["translator_engine"] = translator_engines[self.combo_translator.currentIndex()]
+        self.cfg["deepl_api_key"] = self.txt_deepl_key.text().strip()
+
         save_config(self.cfg)
         if self.worker:
             self.worker.update_config(self.cfg)

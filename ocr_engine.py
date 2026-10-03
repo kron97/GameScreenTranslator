@@ -8,6 +8,7 @@ from PyQt6.QtGui import QGuiApplication
 
 import winocr
 from rapidocr_onnxruntime import RapidOCR
+from translation_cache import TranslationCache
 
 class TranslationWorker(QThread):
     translation_done = pyqtSignal(str, str) # (original, translated)
@@ -19,6 +20,7 @@ class TranslationWorker(QThread):
         self.cfg = cfg
         self.is_running = False
         self.last_clean_text = ""
+        self.cache = TranslationCache()
 
         try:
             self.rapid_engine = RapidOCR()
@@ -210,6 +212,75 @@ class TranslationWorker(QThread):
         return text
 
     def translate_text(self, text, source_lang):
+        """Hybrid Translation Pipeline:
+           1. Local SQLite Cache Lookup (0ms instant response & quota saving)
+           2. DeepL Free/Pro API (High quality natural translation)
+           3. Google GTX API (Free Fallback)
+        """
+        if not text:
+            return ""
+
+        # Step 1: Check Local SQLite Cache (0ms response)
+        try:
+            cached = self.cache.lookup(text)
+            if cached:
+                return cached
+        except Exception as e:
+            print(f"Cache Lookup Error: {e}")
+
+        # Step 2: Determine Configured Translator Engine
+        engine_choice = self.cfg.get("translator_engine", "deepl")
+        deepl_key = self.cfg.get("deepl_api_key", "").strip()
+        translated = None
+
+        if engine_choice == "deepl" and deepl_key:
+            translated = self.translate_deepl(text, source_lang, deepl_key)
+            if translated:
+                self.cache.store(text, translated, "deepl")
+                return translated
+
+        # Step 3: Google GTX Fallback
+        translated = self.translate_google(text, source_lang)
+        if translated and not translated.startswith("[Gagal"):
+            self.cache.store(text, translated, "google")
+            return translated
+
+        return translated or f"[Gagal menterjemahkan]: {text}"
+
+    def translate_deepl(self, text, source_lang, api_key):
+        """Translates text using DeepL Free/Pro REST API"""
+        if not api_key:
+            return None
+        
+        url = "https://api-free.deepl.com/v2/translate" if api_key.endswith(":fx") else "https://api.deepl.com/v2/translate"
+        headers = {
+            "Authorization": f"DeepL-Auth-Key {api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        target_lang = "ID"
+        sl = source_lang.upper() if source_lang != "auto" else None
+        
+        payload = {
+            "text": [text],
+            "target_lang": target_lang
+        }
+        if sl:
+            payload["source_lang"] = sl
+
+        try:
+            resp = requests.post(url, json=payload, headers=headers, timeout=3.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data and "translations" in data and len(data["translations"]) > 0:
+                    return data["translations"][0]["text"]
+            else:
+                print(f"DeepL API HTTP Error Status: {resp.status_code}")
+        except Exception as e:
+            print(f"DeepL API Request Exception: {e}")
+        return None
+
+    def translate_google(self, text, source_lang):
         """Translates text to Indonesian using GTX Google endpoint"""
         try:
             sl = source_lang if source_lang != "auto" else "auto"
@@ -223,7 +294,7 @@ class TranslationWorker(QThread):
             resp = requests.get(
                 "https://translate.googleapis.com/translate_a/single",
                 params=params,
-                timeout=4.0
+                timeout=3.0
             )
             if resp.status_code == 200:
                 data = resp.json()
@@ -231,8 +302,8 @@ class TranslationWorker(QThread):
                     translated_chunks = [chunk[0] for chunk in data[0] if chunk and chunk[0]]
                     return " ".join(translated_chunks)
         except Exception as e:
-            print(f"Translation HTTP error: {e}")
-        return f"[Gagal menterjemahkan]: {text}"
+            print(f"Google GTX HTTP error: {e}")
+        return None
 
     def stop(self):
         self.clear_cache()

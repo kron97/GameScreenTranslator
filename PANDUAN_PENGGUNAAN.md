@@ -7,24 +7,28 @@ Aplikasi **GameTranslator ID** dibuat khusus untuk memungkinkan Anda bermain vid
 ## 🚀 Fitur Utama
 
 1. **Tanpa Mod Game**: Tidak perlu membongkar file game atau khawatir risiko banned/error.
-2. **3 Modus Deteksi Tangkapan Layar (Capture Mode)**:
+2. **Sistem Terjemahan Hybrid (Local SQLite Cache + DeepL API)**:
+   - ⚡ **0ms Local Cache**: Frasa/kalimat yang sudah pernah diterjemahkan atau sering muncul otomatis tersimpan di database SQLite lokal. Saat kalimat tersebut muncul kembali, hasil terjemahan langsung tampil **0 milidetik (tanpa delay & tanpa kuota internet)**!
+   - 🚀 **DeepL API Integration**: Terjemahan kalimat baru menggunakan DeepL untuk hasil yang **sangat natural, akurat, dan halus**.
+   - 🌐 **Google GTX Fallback**: Jika tanpa DeepL API Key, aplikasi otomatis menggunakan Google GTX secara gratis tanpa kuota.
+3. **3 Modus Deteksi Tangkapan Layar (Capture Mode)**:
    - 🎯 **Area Spesifik**: Pilih area kotak subtitle secara manual dengan alat *snip* visual.
    - 🤖 **Auto Subtitle Zone**: Otomatis memindai area 30% bawah tengah layar tempat subtitle game umumnya berada.
    - 🌐 **Deteksi Otomatis Seluruh Layar**: Otomatis memindai teks dialog di seluruh layar game dengan penyaringan pintar.
-3. **Overlay Subtitle 100% Transparan & Bening**:
+4. **Overlay Subtitle 100% Transparan & Bening**:
    - Opsi tampilan **Bening / Tanpa Latar Belakang** (hanya teks terjemahan melayang di atas game).
    - Pengaturan opasitas latar belakang fleksibel (Bening 0%, Redup 40%, Gelap Pekat 80%, atau Slider Kustom 0-100%).
    - Dilengkapi garis tepi (*outline*) 360° yang tajam agar teks selalu mudah dibaca di *scene* terang maupun gelap.
    - **Auto-Expanding Height**: Tinggi kotak subtitle menyesuaikan secara otomatis ke bawah jika teks dialog panjang (multi-baris) sehingga teks tidak pernah terpotong.
-4. **Pembersihan Teks Instan**: Teks subtitle melayang dan cache OCR otomatis dibersihkan seketika begitu terjemahan di-pause/diberhentikan.
-5. **Dua Mesin OCR Berkecepatan Tinggi**:
+5. **Pembersihan Teks Instan**: Teks subtitle melayang dan cache OCR otomatis dibersihkan seketika begitu terjemahan di-pause/diberhentikan.
+6. **Dua Mesin OCR Berkecepatan Tinggi**:
    - **Windows Native OCR**: Sangat cepat, ringan, dan menggunakan fitur OCR bawaan Windows 10/11.
    - **RapidOCR**: Mesin OCR offline berbasis model ONNX untuk akurasi tinggi.
-6. **Kustomisasi Tampilan Subtitle**:
+7. **Kustomisasi Tampilan Subtitle**:
    - Sesuaikan ukuran font (14pt - 48pt).
    - Pilih warna teks (Kuning Subtitle `#FFD700`, Putih Bersih `#FFFFFF`, Hijau Cyan `#00E676`, Kuning Cerah `#FFFF00`).
    - Ketebalan outline dapat disesuaikan.
-7. **Bilah Judul Terkunci (Lock Position)**:
+8. **Bilah Judul Terkunci (Lock Position)**:
    - Kunci posisi overlay agar tidak mengganggu klik mouse saat bermain game.
    - Fitur menyembunyikan bilah judul (*header bar*) saat terkunci agar layar game 100% bersih.
 
@@ -36,10 +40,11 @@ Aplikasi **GameTranslator ID** dibuat khusus untuk memungkinkan Anda bermain vid
 1. Buka game yang ingin Anda mainkan. Disarankan mengatur game ke mode **Borderless Windowed** atau **Windowed Mode** agar aplikasi penerjemah dapat tampil mulus di atas layar game.
 2. Buka folder aplikasi dan klik ganda **`Buka_GameTranslator.vbs`** (atau `Buka_GameTranslator.bat`).
 
-### Langkah 2: Pilih Modus Deteksi Subtitle
-Di panel kontrol utama aplikasi (bagian **1. Modus Tangkapan Layar**), pilih modus yang Anda inginkan:
-* **🎯 Area Spesifik**: Klik tombol **`🎯 Pilih Area Subtitle Game`**, lalu buat kotak hijau pada area tempat subtitle game biasanya muncul.
-* **🤖 Auto Subtitle Zone**: Aplikasi akan langsung memindai area bawah layar tanpa perlu seleksi manual.
+### Langkah 2: Pilih Modus Deteksi Subtitle & Mesin Penerjemah
+1. Di panel kontrol utama (bagian **1. Modus Tangkapan Layar**), pilih modus deteksi (misal: *🎯 Area Spesifik* atau *🤖 Auto Subtitle Zone*).
+2. Di bagian **4. Pengaturan Bahasa & Mesin OCR**:
+   - Pilih Mesin Penerjemah: **🚀 DeepL API** atau **🌐 Google GTX**.
+   - *(Opsional)* Masukkan DeepL Free/Pro API Key Anda jika memilih DeepL.
 
 ### Langkah 3: Atur Tampilan Subtitle (Opsional)
 - **Model Latar**: Pilih **👻 Bening / Tanpa Latar** jika Anda ingin teks melayang tanpa kotak background.
