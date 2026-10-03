@@ -9,7 +9,7 @@ from datetime import datetime
 import numpy as np
 from PIL import Image, ImageEnhance
 from PyQt6.QtCore import QThread, pyqtSignal, QRect, QObject
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtGui import QGuiApplication, QImage
 
 import winocr
 from rapidocr_onnxruntime import RapidOCR
@@ -180,7 +180,7 @@ class TranslationWorker(QThread):
                     time.sleep(0.1)
                     continue
 
-                qimg = pixmap.toImage().convertToFormat(qimg.Format.Format_RGB888)
+                qimg = pixmap.toImage().convertToFormat(QImage.Format.Format_RGB888)
                 width = qimg.width()
                 height = qimg.height()
                 ptr = qimg.bits()
