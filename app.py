@@ -1,5 +1,7 @@
 import sys
 import os
+import traceback
+from datetime import datetime
 
 # Ensure current directory is in python search path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -16,7 +18,13 @@ from config import load_config, save_config
 from region_selector import RegionSelector
 from subtitle_overlay import SubtitleOverlay
 from auto_zone_widget import AutoZoneBoxWidget
-from ocr_engine import TranslationWorker
+from ocr_engine import TranslationWorker, log_debug
+
+def global_excepthook(exc_type, exc_value, exc_traceback):
+    err_str = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    log_debug("FATAL EXCEPTION", f"\n{err_str}")
+
+sys.excepthook = global_excepthook
 
 
 class GameTranslatorApp(QMainWindow):
@@ -445,6 +453,7 @@ class GameTranslatorApp(QMainWindow):
         if self.worker:
             self.stop_translation()
 
+        log_debug("GUI ACTION", f"Mulai Menterjemahkan -> Capture Mode: '{self.cfg.get('capture_mode')}', Translator: '{self.cfg.get('translator_engine')}', OCR: '{self.cfg.get('ocr_engine')}'")
         self.worker = TranslationWorker(self.cfg)
         self.worker.translation_done.connect(self.on_translation_done)
         self.worker.status_updated.connect(self.on_status_updated)
@@ -457,6 +466,7 @@ class GameTranslatorApp(QMainWindow):
         self.lbl_status.setStyleSheet("color: #00E676; font-weight: bold;")
 
     def stop_translation(self):
+        log_debug("GUI ACTION", "Hentikan Menterjemahkan diklik pengguna")
         if self.worker:
             w = self.worker
             self.worker = None
